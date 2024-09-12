@@ -10,7 +10,7 @@ enum COMPARISON_STATUS
     SMALLER = -1,
 };
 
-const int WIDTH = 32;
+const int WIDTH = 32;        // MAX_LEN
 const int HEIGHT = 15;
 
 int custom_strcmp(char* str_1, char* str_2);
@@ -19,8 +19,7 @@ void str_swap(char* str_1, char* str_2);
 
 int main(void)
 {
-    FILE* onegin = fopen("ONEGIN.txt", "r");
-
+    FILE* onegin = fopen("ONEGIN.txt", "r");  // если онегина нет
     char text[HEIGHT][WIDTH] = {0};
     char* data_ptrs[HEIGHT]  = {0};
     char* adress = &text[0][0];
@@ -37,22 +36,24 @@ int main(void)
     {
 
         for (int i = 0; i < WIDTH; i++)
+        {
             printf("%c", data_ptrs[y][i]);
-
+        }
     }
     printf("\n");
 
 
     char* tempor_ptr = 0;
-    for (int i = 0; i < HEIGHT; i++)
+    for (int i = 0; i <  )
     {
         for (int j = 0; j < HEIGHT - 1; j++)
         {
-            if (custom_strcmp(data_ptrs[j], data_ptrs[j+1]) == BIGGER)
+            if (custom_strcmp(text[j], text[j+1]) == BIGGER)
             {
-                tempor_ptr     = data_ptrs[j];
-                data_ptrs[j] = data_ptrs[j+1];
-                data_ptrs[j+1]   = tempor_ptr;
+                tempor_ptr = data_ptrs[j+1];
+                data_ptrs[j+1] = data_ptrs[j];
+                data_ptrs[j] = tempor_ptr;
+                //str_swap(data_ptrs[x], data_ptrs[x+1]);
             }
 
         }
@@ -62,7 +63,9 @@ int main(void)
     {
 
         for (int i = 0; i < WIDTH; i++)
+        {
             printf("%c", data_ptrs[y][i]);
+        }
     }
     printf("\n");
 
@@ -80,19 +83,6 @@ int custom_strcmp(char* str_1, char* str_2)
     }
     return EQUAL;
 }
-
-/*void print_text(char* data_ptrs)
-{
-    for (int y = 0; y < HEIGHT; y++)
-    {
-        for (int i = 0; i < WIDTH; i++)
-        {
-            printf("%c", *(data_ptrs+y*WIDTH+i));
-        }
-    }
-
-    printf("\n");
-}             */
 
 /*int r_strcmp(const char* str_1, const char* str_2)
 {
