@@ -1,3 +1,4 @@
+
 #include<stdio.h>
 #include<ctype.h>
 #include<stdlib.h>
@@ -141,6 +142,4 @@ int custom_min(int var_1, int var_2)
     if (var_1 >= var_2)
          return var_2;
     else return var_1;
-
 }
-
