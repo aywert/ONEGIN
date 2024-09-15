@@ -82,8 +82,6 @@ int main(void)
 
     free(STR_DATA.pointer_str); STR_DATA.pointer_str = NULL;
     free(STR_DATA.length_str);  STR_DATA.length_str  = NULL;
-
-    printf ("I'VE CUMMED!!!");
 }
 
 void read_text_from_file(ALL_INF_FILE* FILE_1)
@@ -138,7 +136,6 @@ void sort_file(ALL_INF_FILE* FILE_1)
                 tempor_ptr     = STR_DATA->pointer_str[j];
                 STR_DATA->pointer_str[j]   = STR_DATA->pointer_str[j+1];
                 STR_DATA->pointer_str[j+1] = tempor_ptr;
-                //printf("%s", tempor_ptr);
 
                 tempor_len     = STR_DATA->length_str[j];
                 STR_DATA->length_str[j]    = STR_DATA->length_str[j+1];
