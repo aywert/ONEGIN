@@ -12,12 +12,19 @@ struct data_per_str // type -> why caps
     int*    length_str;
 };
 
+struct ptr_and_len
+{
+    char* pointer;
+    int   length;
+};
+
 struct all_inf_file
 {
     int rows;
     int text_size;
     char* text;
     const char* ptr_file;
+    struct ptr_and_len* pointer_struct;
     struct data_per_str* str_data;
     struct stat* text_data;
     FILE*  input_file;
@@ -40,9 +47,7 @@ enum EXIT
 //сделать ассерты
 
 int read_text_from_file(all_inf_file* FILE);
-void my_qsort(void* pointer_str, size_t size, size_t element_size, int (*func_compare_str)(const void* a, const void* b));
-void sort_lengths(all_inf_file* FILE_1);
-void sort_file(all_inf_file* FILE);
+void my_sort(void* pointer_str, size_t size, size_t element_size, int (*func_compare_str)(const void* a, const void* b));
 void write_text_to_file(all_inf_file* FILE);
 int func_compare_str(const void* a, const void* b);
 int func_compare_str_backwards(const void* a, const void* b);
@@ -60,13 +65,13 @@ int main(void)
 
     if (onegin_file == NULL)
     {
-        printf("Sorry couldn't read the file\n");
+        printf("Sorry couldn't read the file 1\n");
         return FAIL;
     }
 
     if (out_onegin == NULL)
     {
-        printf("Sorry couldn't read the file\n");
+        printf("Sorry couldn't read the file 2\n");
         return FAIL;
     }
 
@@ -76,6 +81,7 @@ int main(void)
         .text_size   = 0,
         .text        = NULL,
         .ptr_file    = onegin,
+        .pointer_struct = NULL,
         .str_data    = &str_data,
         .text_data   = &text_data,
         .input_file  = onegin_file,
@@ -83,20 +89,21 @@ int main(void)
     };
 
     read_text_from_file(&file_1);
+    printf("did read\n");
+    write_text_to_file(&file_1);
+    printf("did write 1");
+    my_sort(file_1.pointer_struct, file_1.rows, sizeof(file_1.pointer_struct[0]), func_compare_str);
+    printf("did my sort");
 
     write_text_to_file(&file_1);
-    
-    my_qsort(file_1.str_data->pointer_str, file_1.rows, sizeof(char*), func_compare_str);
-    sort_lengths(&file_1);
-
-    write_text_to_file(&file_1);
+    printf("did write 2");
 
     fclose(onegin_file);
     fclose(out_onegin);
 
-    free(str_data.pointer_str); str_data.pointer_str = NULL;
-    free(str_data.length_str);  str_data.length_str  = NULL;
-    free(file_1.text); file_1.text = NULL; // free ALL
+    free(file_1.pointer_struct);  file_1.pointer_struct  = NULL;
+    free(file_1.text); file_1.text = NULL;
+    printf("I'VE CUMMED!!!");
 }
 
 int read_text_from_file(all_inf_file* file_1)
@@ -110,58 +117,51 @@ int read_text_from_file(all_inf_file* file_1)
 
     if ((file_1->text) == NULL)
     {
-        printf("Sorry couldn't read the file\n");
-        return FAIL; 
+        printf("Sorry couldn't read the file 3\n");
+        return FAIL;
     }
 
     fread(file_1->text, file_1->text_size , sizeof(char), file_1->input_file);
 
     file_1->rows = custom_strcount(file_1->text, file_1->text_size);
 
-    file_1->str_data->pointer_str = (char**)calloc(file_1->rows, sizeof(char*));
-    file_1->str_data->length_str  = (int*)calloc(file_1->rows, sizeof(int));
-    
-    if (file_1->str_data->pointer_str == NULL)
-    {
-        printf("Sorry couldn't read the file\n");
-        return FAIL;
-    }
 
-     if (file_1->str_data->length_str == NULL)
-    {
-        printf("Sorry couldn't read the file\n");
-        return FAIL;
-    }
+    file_1->pointer_struct = (ptr_and_len*)calloc(file_1->rows, sizeof(char*)+sizeof(int));
 
-    file_1->str_data->pointer_str[0] = &file_1->text[0];
+    file_1->pointer_struct[0].pointer = &file_1->text[0];
 
     int count_len = 0;
     int index     = 0;
+    int count_current_str = 0;
 
     for (int i = 0; i < file_1->text_size; i++)
     {
         count_len++;
         if (file_1->text[i] == '\n')
         {
+            count_current_str++;
             if (index < file_1->rows - 1)
             {
-                file_1->str_data->pointer_str[index+1] = &file_1->text[i+1];
+                file_1->pointer_struct[count_current_str].pointer = &file_1->text[i+1];
             }
-
-            file_1->str_data->length_str[index] = count_len;
+            //printf("%s\n\n\n", file_1->pointer_struct[count_current_str].pointer);
+            file_1->pointer_struct[index].length = count_len;
+            //printf("%s\n\n", file_1->pointer_struct[count_current_str].pointer);
+            printf("%d\n\n", file_1->pointer_struct[index].length);
             index++;
             count_len = 0;
         }
+        //printf("%c", *file_1->pointer_struct[].pointer);
     }
 
 }
 
-void my_qsort(void* pointer_str, size_t size, size_t element_size, int (*func_compare_str)(const void* a, const void* b))
+void my_sort(void* pointer_str, size_t size, size_t element_size, int (*func_compare_str)(const void* a, const void* b))
 {
     assert(pointer_str != NULL);
 
     char tempor_ptr = 0;
-
+    //printf("i' me in\n");
     for (size_t i = 0; i < size; i++)
     {
         for (size_t j = 0; j < size - 1; j++)
@@ -180,37 +180,27 @@ void my_qsort(void* pointer_str, size_t size, size_t element_size, int (*func_co
     }
 }
 
-void sort_lengths(all_inf_file* FILE_1) // rename
-{
-    for (int i = 0; i < FILE_1->rows; i++)
-    {
-        int count_len = 0;
-        int j = 0;
-
-        while(FILE_1->str_data->pointer_str[i][j] != '\n')
-        {
-            count_len++;
-            j++;
-        }
-        FILE_1->str_data->length_str[i] = count_len;
-    }
-}
-
 int func_compare_str(const void* a, const void* b)
 {
     int i = 0;
     int j = 0;
+    ptr_and_len* new_a = ((ptr_and_len*)a);
+    ptr_and_len* new_b = ((ptr_and_len*)b);
 
-    while (*((char*)a + i) != '\n' && *((char*)b + j) != '\n')
+    //printf("!!!%p!!!", new_b->pointer);
+    //printf("!!!%p!!!", new_a->pointer);
+    //printf("was here\n");
+
+    while (*(((ptr_and_len*)a)->pointer + i) != '\n' && *(((ptr_and_len*)b)->pointer + j) != '\n')
     {
         /*if (!isalnum(*((char*)a + i)))
             i++;
         if (!isalnum(*((char*)b + j)))
             j++;*/
-
-        if ((tolower(**((char**)a + i))-tolower(**((char**)b + j))) > 0)
+        //printf("func_compare_str\n");
+        if ((tolower(*(((ptr_and_len*)a)->pointer + i))-tolower(*(((ptr_and_len*)b)->pointer + j))) > 0)
             return BIGGER;
-        if ((tolower(**((char**)a + i))-tolower(**((char**)b + j))) < 0)
+        if ((tolower(*(((ptr_and_len*)a)->pointer + i))-tolower(*(((ptr_and_len*)b)->pointer + j))) < 0)
             return SMALLER;
         i++;
         j++;
@@ -232,17 +222,17 @@ int func_compare_str_backwards(const void* a, const void* b)
     return EQUAL;
 }
 
-void write_text_to_file(all_inf_file* FILE_1)
+void write_text_to_file(all_inf_file* file_1)
 {
-    assert(FILE_1 != 0);
-    for (int y = 0; y < FILE_1->rows; y++)
+    assert(file_1 != 0);
+    for (int y = 0; y < file_1->rows; y++)
     {//аргументы командной строки смотреть в прате
-        for (int i = 0; i < FILE_1->str_data->length_str[y]; i++)
+        for (int i = 0; i < file_1->pointer_struct[y].length; i++)
         {
-            fprintf(FILE_1->output_file, "%c", FILE_1->str_data->pointer_str[y][i]);
+            fprintf(file_1->output_file, "%c", file_1->pointer_struct[y].pointer[i]);
         }
     }
-    fprintf(FILE_1->output_file, "\n");
+    fprintf(file_1->output_file, "\n");
 }
 
 COMPARE_STATUS custom_strcmp(char* const str_1, int len_1, char* const str_2, int len_2)
