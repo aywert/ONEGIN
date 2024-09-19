@@ -37,44 +37,36 @@ enum COMPARE_STATUS
     SMALLER = -1,
 };
 
-enum EXIT
+enum STATUS
 {
     SUCCESS = 0,
     FAIL    = 1,
 };
-
 //аргументы командной строки смотреть в прате
 
 GREETING_STATUS start_greeting(void);
+
 int read_text_from_file(all_inf_file* FILE);
 void my_sort(void* pointer_str, size_t size, size_t element_size, int (*func_compare_str)(const void* a, const void* b));
 void write_text_to_file(all_inf_file* FILE);
-int func_compare_str(const void* a, const void* b);
+int func_compare_str_straight(const void* a, const void* b);
 int func_compare_str_backwards(const void* a, const void* b);
 COMPARE_STATUS custom_strcmp(char* str_1,int len_1, char* str_2, int len_2);
 int custom_strcount(char* text, int size_of_file);
 int custom_min(int var_1, int var_2);
 int custom_max(int var_1, int var_2);
+STATUS check_ptr(void* pointer);
 
 
 int main(void)
 {
-    struct stat text_data = {}; // variable WHY CAPS
+    struct stat text_data = {};
     const char* onegin = "ONEGIN.txt";
     FILE* onegin_file = fopen(onegin, "rb");
     FILE* out_onegin = fopen("OUTPUT_ONEGIN.txt", "wb");
 
-    if (onegin_file == NULL)
-    {
-        printf("Sorry couldn't read the file 1\n");
-        return FAIL;
-    }
-
-    if (out_onegin == NULL)
-    {
-        printf("Sorry couldn't read the file 2\n");
-        return FAIL;
-    }
+    assert(check_ptr(onegin_file) != FAIL);
+    assert(check_ptr(out_onegin)  != FAIL);
 
     struct all_inf_file file_1 =
     {
@@ -108,25 +100,19 @@ int read_text_from_file(all_inf_file* file_1)
     assert(file_1 != NULL);
 
     stat(file_1->ptr_file, file_1->text_data);
-
     file_1->text_size = file_1->text_data->st_size;
     file_1->text = (char*) calloc(file_1->text_size, sizeof(char));
 
-    if ((file_1->text) == NULL)
-    {
-        printf("Sorry couldn't read the file 3\n");
-        return FAIL;
-    }
+    assert(check_ptr(file_1->text) != FAIL);
 
     fread(file_1->text, file_1->text_size , sizeof(char), file_1->input_file);
-
     file_1->rows = custom_strcount(file_1->text, file_1->text_size);
 
     file_1->pointer_struct = (ptr_and_len*)calloc(file_1->rows, sizeof(char*)+sizeof(int));
     file_1->pointer_struct[0].pointer = &file_1->text[0];
 
-    int count_len = 0;
     int index     = 0;
+    int count_len = 0;
     int count_current_str = 0;
 
     for (int i = 0; i < file_1->text_size; i++)
@@ -150,7 +136,11 @@ int read_text_from_file(all_inf_file* file_1)
 GREETING_STATUS start_greeting(void)
 {
     printf("Welcome to sorting hub!\n");
-    printf("What a pleasure to meet you\n");
+    printf("What a pleasure to meet you!\n\n");
+    //printf("Please enter the name of file which you wanr to sort: ");
+    //printf("Please enter the name of file where you want us to put your sorted text: ");
+    printf("Sort straight or backwards?\n");
+    printf("1/0");
 }
 
 void my_sort(void* pointer_str, size_t size, size_t element_size, int (*func_compare_str)(const void* a, const void* b))
@@ -179,7 +169,7 @@ void my_sort(void* pointer_str, size_t size, size_t element_size, int (*func_com
     }
 }
 
-int func_compare_str(const void* a, const void* b)
+int func_compare_str_straight(const void* a, const void* b)
 {
     assert(a != NULL);
     assert(b != NULL);
@@ -218,7 +208,7 @@ int func_compare_str_backwards(const void* a, const void* b)
     int i = 0;
     int j = 0;
     
-    while (custom_max(i, j) < custom_min(new_a->length, new_b->length))
+    while ((i < new_a->length) && (j < new_b->length))
     {
         if (!isalnum(*(new_a->pointer + new_a->length - 1 - i)))
             i++;
@@ -293,4 +283,13 @@ int custom_max(int var_1, int var_2)
     if (var_1 >= var_2)
          return var_1;
     else return var_2;
+}
+
+STATUS check_ptr(void* pointer)
+{
+    if (pointer == NULL)
+    {
+        printf("Sorry couldn't read the file 3\n");
+        return FAIL;
+    }
 }
