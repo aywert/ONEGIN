@@ -6,12 +6,6 @@
 #include <sys/stat.h>
 #include<string.h>
 
-struct data_per_str // type -> why caps
-{
-    char** pointer_str;
-    int*    length_str;
-};
-
 struct ptr_and_len
 {
     char* pointer;
@@ -25,10 +19,15 @@ struct all_inf_file
     char* text;
     const char* ptr_file;
     struct ptr_and_len* pointer_struct;
-    struct data_per_str* str_data;
     struct stat* text_data;
     FILE*  input_file;
     FILE* output_file;
+};
+
+enum GREETING_STATUS
+{
+    first_option  = 0,
+    second_opti0n = 1,
 };
 
 enum COMPARE_STATUS
@@ -44,8 +43,9 @@ enum EXIT
     FAIL    = 1,
 };
 
-//сделать ассерты
+//аргументы командной строки смотреть в прате
 
+GREETING_STATUS start_greeting(void);
 int read_text_from_file(all_inf_file* FILE);
 void my_sort(void* pointer_str, size_t size, size_t element_size, int (*func_compare_str)(const void* a, const void* b));
 void write_text_to_file(all_inf_file* FILE);
@@ -54,11 +54,12 @@ int func_compare_str_backwards(const void* a, const void* b);
 COMPARE_STATUS custom_strcmp(char* str_1,int len_1, char* str_2, int len_2);
 int custom_strcount(char* text, int size_of_file);
 int custom_min(int var_1, int var_2);
+int custom_max(int var_1, int var_2);
+
 
 int main(void)
 {
     struct stat text_data = {}; // variable WHY CAPS
-    struct data_per_str str_data = {0}; // I BIIIIIIIIIIG VARIABLE
     const char* onegin = "ONEGIN.txt";
     FILE* onegin_file = fopen(onegin, "rb");
     FILE* out_onegin = fopen("OUTPUT_ONEGIN.txt", "wb");
@@ -82,28 +83,24 @@ int main(void)
         .text        = NULL,
         .ptr_file    = onegin,
         .pointer_struct = NULL,
-        .str_data    = &str_data,
         .text_data   = &text_data,
         .input_file  = onegin_file,
         .output_file = out_onegin,
     };
 
     read_text_from_file(&file_1);
-    printf("did read\n");
+    
     write_text_to_file(&file_1);
-    printf("did write 1");
-    my_sort(file_1.pointer_struct, file_1.rows, sizeof(file_1.pointer_struct[0]), func_compare_str);
-    printf("did my sort");
+    
+    my_sort(file_1.pointer_struct, file_1.rows, sizeof(file_1.pointer_struct[0]), func_compare_str_backwards);
 
     write_text_to_file(&file_1);
-    printf("did write 2");
 
     fclose(onegin_file);
     fclose(out_onegin);
 
-    free(file_1.pointer_struct);  file_1.pointer_struct  = NULL;
+    free(file_1.pointer_struct); file_1.pointer_struct  = NULL;
     free(file_1.text); file_1.text = NULL;
-    printf("I'VE CUMMED!!!");
 }
 
 int read_text_from_file(all_inf_file* file_1)
@@ -125,9 +122,7 @@ int read_text_from_file(all_inf_file* file_1)
 
     file_1->rows = custom_strcount(file_1->text, file_1->text_size);
 
-
     file_1->pointer_struct = (ptr_and_len*)calloc(file_1->rows, sizeof(char*)+sizeof(int));
-
     file_1->pointer_struct[0].pointer = &file_1->text[0];
 
     int count_len = 0;
@@ -144,24 +139,28 @@ int read_text_from_file(all_inf_file* file_1)
             {
                 file_1->pointer_struct[count_current_str].pointer = &file_1->text[i+1];
             }
-            //printf("%s\n\n\n", file_1->pointer_struct[count_current_str].pointer);
             file_1->pointer_struct[index].length = count_len;
-            //printf("%s\n\n", file_1->pointer_struct[count_current_str].pointer);
-            printf("%d\n\n", file_1->pointer_struct[index].length);
             index++;
             count_len = 0;
         }
-        //printf("%c", *file_1->pointer_struct[].pointer);
     }
 
+}
+
+GREETING_STATUS start_greeting(void)
+{
+    printf("Welcome to sorting hub!\n");
+    printf("What a pleasure to meet you\n");
 }
 
 void my_sort(void* pointer_str, size_t size, size_t element_size, int (*func_compare_str)(const void* a, const void* b))
 {
     assert(pointer_str != NULL);
+    assert(size != NAN);
+    assert(element_size != NAN);
+    assert(func_compare_str != NULL);
 
     char tempor_ptr = 0;
-    //printf("i' me in\n");
     for (size_t i = 0; i < size; i++)
     {
         for (size_t j = 0; j < size - 1; j++)
@@ -182,25 +181,25 @@ void my_sort(void* pointer_str, size_t size, size_t element_size, int (*func_com
 
 int func_compare_str(const void* a, const void* b)
 {
-    int i = 0;
-    int j = 0;
+    assert(a != NULL);
+    assert(b != NULL);
+
     ptr_and_len* new_a = ((ptr_and_len*)a);
     ptr_and_len* new_b = ((ptr_and_len*)b);
 
-    //printf("!!!%p!!!", new_b->pointer);
-    //printf("!!!%p!!!", new_a->pointer);
-    //printf("was here\n");
-
-    while (*(((ptr_and_len*)a)->pointer + i) != '\n' && *(((ptr_and_len*)b)->pointer + j) != '\n')
+    int i = 0;
+    int j = 0;
+    
+    while (*(new_a->pointer + i) != '\n' && *(new_b->pointer + j) != '\n')
     {
-        /*if (!isalnum(*((char*)a + i)))
+        if (!isalnum(*(new_a->pointer + i)))
             i++;
-        if (!isalnum(*((char*)b + j)))
-            j++;*/
-        //printf("func_compare_str\n");
-        if ((tolower(*(((ptr_and_len*)a)->pointer + i))-tolower(*(((ptr_and_len*)b)->pointer + j))) > 0)
+        if (!isalnum(*(new_b->pointer + j)))
+            j++;
+
+        if ((tolower(*(new_a->pointer + i))-tolower(*(new_b->pointer + j))) > 0)
             return BIGGER;
-        if ((tolower(*(((ptr_and_len*)a)->pointer + i))-tolower(*(((ptr_and_len*)b)->pointer + j))) < 0)
+        if ((tolower(*(new_a->pointer + i))-tolower(*(new_b->pointer + j))) < 0)
             return SMALLER;
         i++;
         j++;
@@ -210,14 +209,28 @@ int func_compare_str(const void* a, const void* b)
 
 int func_compare_str_backwards(const void* a, const void* b)
 {
+    assert(a != NULL);
+    assert(b != NULL);
+
+    ptr_and_len* new_a = ((ptr_and_len*)a);
+    ptr_and_len* new_b = ((ptr_and_len*)b);
+
     int i = 0;
-    while (*((char*)a + i) != '\n' && *((char*)a + i + 1) != '\n')
+    int j = 0;
+    
+    while (custom_max(i, j) < custom_min(new_a->length, new_b->length))
     {
-        if ((tolower(**((char**)a + i))-tolower(**((char**)b + i))) > 0)
+        if (!isalnum(*(new_a->pointer + new_a->length - 1 - i)))
+            i++;
+        if (!isalnum(*(new_b->pointer + new_b->length - 1 - j)))
+            j++;
+
+        if ((tolower(*(new_a->pointer + new_a->length - 1 - i)) - tolower(*(new_b->pointer + new_b->length - 1 - j))) > 0)
             return BIGGER;
-        if ((tolower(**((char**)a + i))-tolower(**((char**)b + i))) < 0)
+        if ((tolower(*(new_a->pointer + new_a->length - 1 - i)) - tolower(*(new_b->pointer + new_b->length - 1 - j))) < 0)
             return SMALLER;
         i++;
+        j++;
     }
     return EQUAL;
 }
@@ -225,8 +238,9 @@ int func_compare_str_backwards(const void* a, const void* b)
 void write_text_to_file(all_inf_file* file_1)
 {
     assert(file_1 != 0);
+
     for (int y = 0; y < file_1->rows; y++)
-    {//аргументы командной строки смотреть в прате
+    {
         for (int i = 0; i < file_1->pointer_struct[y].length; i++)
         {
             fprintf(file_1->output_file, "%c", file_1->pointer_struct[y].pointer[i]);
@@ -254,7 +268,11 @@ COMPARE_STATUS custom_strcmp(char* const str_1, int len_1, char* const str_2, in
 
 int custom_strcount(char* text, int size_of_file)
 {
+    assert(text != NULL);
+    assert(size_of_file != NAN);
+
     int count = 0;
+
     for (int i = 0; i < size_of_file-1; i++)
     {
         if ((text[i] =='\r') && (text[i+1] == '\n'))
@@ -270,3 +288,9 @@ int custom_min(int var_1, int var_2)
     else return var_1;
 }
 
+int custom_max(int var_1, int var_2)
+{
+    if (var_1 >= var_2)
+         return var_1;
+    else return var_2;
+}
