@@ -13,7 +13,7 @@ enum COMPARE_STATUS
     SMALLER = -1,
 };
 
-enum COMPORATOR
+enum COMPARATOR
 {
     STRAIGHT = 1,
     BACKWARD = 0,
@@ -36,18 +36,17 @@ struct ptr_and_len
 struct all_inf_file
 {
     int rows;
-    int text_size;
     char* text;
-    const char* ptr_file;
-    func_compare_t comporator;
-    struct ptr_and_len* pointer_struct;
-    struct stat* text_data;
+    const char* file_name;
+    func_compare_t comparator;
+    struct ptr_and_len* string_inf;
+    struct stat text_data;
     FILE*  input_file;
     FILE* output_file;
 };
 
 
-void do_sort(const char* file, const char* output_file, COMPORATOR decider);
+STATUS_OF_OPERATION do_sort(const char* file, const char* output_file, COMPARATOR decider);
 void read_text_from_file(all_inf_file* FILE);
 void write_text_to_file(all_inf_file* FILE);
 void my_sort(void* pointer_str, size_t size, size_t element_size, func_compare_t func_compare_str);
@@ -60,7 +59,7 @@ STATUS_OF_OPERATION check_ptr(void* pointer);
 
 int main(int argc, char* argv[])
 {
-    COMPORATOR decider = STRAIGHT;
+    COMPARATOR decider = STRAIGHT;
 
     if (argc >= 2)
         decider = (strcmp(argv[argc-1], "backwards") == 0)? BACKWARD : STRAIGHT;
@@ -78,48 +77,55 @@ int main(int argc, char* argv[])
 
 }
 
-void do_sort(const char* file, const char* output_file, COMPORATOR decider)
+STATUS_OF_OPERATION do_sort(const char* file, const char* output_file, COMPARATOR decider)
 {
     struct stat text_data = {};
-    const char* onegin = file;
-    FILE* onegin_file = fopen(file, "rb");
-    FILE* out_onegin = fopen(output_file, "wb");
+    FILE* input_onegin = fopen(file, "rb");
+    FILE* output_onegin = fopen(output_file, "wb");
 
-    func_compare_t comporator = NULL;
+    func_compare_t comparator = NULL;
 
     if (decider == STRAIGHT)
-        comporator = func_compare_str_straight;
+        comparator = func_compare_str_straight;
     else
-        comporator = func_compare_str_backwards;
-    
-    assert(check_ptr(onegin_file) != FAIL);
-    assert(check_ptr(out_onegin)  != FAIL);
+        comparator = func_compare_str_backwards;
+
+    if (input_onegin == NULL)
+    {
+        printf("Sorry couldn't read the file\n");
+        return FAIL;
+    }
+
+    if (output_onegin == NULL)
+    {
+        printf("Sorry couldn't read the file\n");
+        return FAIL;
+    }
 
     struct all_inf_file file_1 =
     {
         .rows        = 0,
-        .text_size   = 0,
         .text        = NULL,
-        .ptr_file    = onegin,
-        .comporator = comporator,
-        .pointer_struct = NULL,
-        .text_data   = &text_data,
-        .input_file  = onegin_file,
-        .output_file = out_onegin,
+        .file_name   = file,
+        .comparator  = comparator,
+        .string_inf  = NULL,
+        .text_data   = text_data,
+        .input_file  = input_onegin,
+        .output_file = output_onegin,
     };
 
     read_text_from_file(&file_1);
     
     write_text_to_file(&file_1);
     
-    my_sort(file_1.pointer_struct, file_1.rows, sizeof(file_1.pointer_struct[0]), file_1.comporator);
+    my_sort(file_1.string_inf, file_1.rows, sizeof(file_1.string_inf[0]), file_1.comparator);
     
     write_text_to_file(&file_1);
 
-    fclose(onegin_file);
-    fclose(out_onegin);
+    fclose(input_onegin);
+    fclose(output_onegin);
 
-    free(file_1.pointer_struct); file_1.pointer_struct  = NULL;
+    free(file_1.string_inf); file_1.string_inf  = NULL;
     free(file_1.text); file_1.text = NULL;
 }
 
@@ -127,23 +133,28 @@ void read_text_from_file(all_inf_file* file_1)
 {
     assert(file_1 != NULL);
 
-    stat(file_1->ptr_file, file_1->text_data);
-    file_1->text_size = file_1->text_data->st_size;
-    file_1->text = (char*) calloc(file_1->text_size, sizeof(char));
+    // FUNCTION START
+
+    stat(file_1->file_name, &(file_1->text_data));
+
+    file_1->text = (char*) calloc(file_1->text_data.st_size, sizeof(char));
 
     assert(check_ptr(file_1->text) != FAIL);
 
-    fread(file_1->text, file_1->text_size , sizeof(char), file_1->input_file);
-    file_1->rows = custom_strcount(file_1->text, file_1->text_size);
+    fread(file_1->text, file_1->text_data.st_size , sizeof(char), file_1->input_file);
 
-    file_1->pointer_struct = (ptr_and_len*)calloc(file_1->rows, sizeof(char*)+sizeof(int));
-    file_1->pointer_struct[0].pointer = &file_1->text[0];
+    // FUNCTION END
+
+    file_1->rows = custom_strcount(file_1->text, file_1->text_data.st_size);
+
+    file_1->string_inf = (ptr_and_len*)calloc(file_1->rows, sizeof(char*)+sizeof(int));
+    file_1->string_inf[0].pointer = &file_1->text[0];
 
     int index     = 0;
     int count_len = 0;
     int count_current_str = 0;
 
-    for (int i = 0; i < file_1->text_size; i++)
+    for (int i = 0; i < file_1->text_data.st_size; i++)
     {
         count_len++;
         if (file_1->text[i] == '\n')
@@ -151,9 +162,9 @@ void read_text_from_file(all_inf_file* file_1)
             count_current_str++;
             if (index < file_1->rows - 1)
             {
-                file_1->pointer_struct[count_current_str].pointer = &file_1->text[i+1];
+                file_1->string_inf[count_current_str].pointer = &file_1->text[i+1];
             }
-            file_1->pointer_struct[index].length = count_len;
+            file_1->string_inf[index].length = count_len;
             index++;
             count_len = 0;
         }
@@ -248,12 +259,12 @@ void write_text_to_file(all_inf_file* file_1)
 
     for (int y = 0; y < file_1->rows; y++)
     {
-        for (int i = 0; i < file_1->pointer_struct[y].length; i++)
+        for (int i = 0; i < file_1->string_inf[y].length; i++)
         {
-            fprintf(file_1->output_file, "%c", file_1->pointer_struct[y].pointer[i]);
+            fprintf(file_1->output_file, "%c", file_1->string_inf[y].pointer[i]);//СЃРґРµР»Р°С‚СЊ fputs
         }
     }
-    fprintf(file_1->output_file, "\n");
+    fprintf(file_1->output_file, "\n");//fputc
 }
 
 int custom_strcount(char* text, int size_of_file)
@@ -285,7 +296,7 @@ int custom_max(int var_1, int var_2)
     else return var_2;
 }
 
-STATUS_OF_OPERATION check_ptr(void* pointer)
+STATUS_OF_OPERATION check_ptr(void* pointer) // cringe
 {
     if (pointer == NULL)
     {
