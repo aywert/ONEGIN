@@ -6,8 +6,6 @@
 #include <sys/stat.h>
 #include<string.h>
 
-// TEST COMMENT MAIN
-
 enum COMPARE_STATUS
 {
     BIGGER  =  1,
