@@ -47,7 +47,7 @@ struct all_inf_file
 
 
 STATUS_OF_OPERATION do_sort(const char* file, const char* output_file, COMPARATOR decider);
-void read_text_from_file(all_inf_file* FILE);
+STATUS_OF_OPERATION read_text_from_file(all_inf_file* FILE);
 void write_text_to_file(all_inf_file* FILE);
 void my_sort(void* pointer_str, size_t size, size_t element_size, func_compare_t func_compare_str);
 COMPARE_STATUS func_compare_str_straight(const void* a, const void* b);
@@ -56,6 +56,7 @@ int custom_strcount(char* text, int size_of_file);
 int custom_min(int var_1, int var_2);
 int custom_max(int var_1, int var_2);
 STATUS_OF_OPERATION check_ptr(void* pointer);
+char* record_inf_from_file(const char* file_name, struct stat* text_data, FILE* input_file);
 
 int main(int argc, char* argv[])
 {
@@ -127,27 +128,32 @@ STATUS_OF_OPERATION do_sort(const char* file, const char* output_file, COMPARATO
 
     free(file_1.string_inf); file_1.string_inf  = NULL;
     free(file_1.text); file_1.text = NULL;
+
+    return SUCCESS;
 }
 
-void read_text_from_file(all_inf_file* file_1)
+STATUS_OF_OPERATION read_text_from_file(all_inf_file* file_1)
 {
     assert(file_1 != NULL);
 
-    // FUNCTION START
+    file_1->text = record_inf_from_file(file_1->file_name, &(file_1->text_data), file_1->input_file);
 
-    stat(file_1->file_name, &(file_1->text_data));
-
-    file_1->text = (char*) calloc(file_1->text_data.st_size, sizeof(char));
-
-    assert(check_ptr(file_1->text) != FAIL);
-
-    fread(file_1->text, file_1->text_data.st_size , sizeof(char), file_1->input_file);
-
-    // FUNCTION END
+    if (file_1->text == NULL)
+    {
+        printf("Sorry couldn't read the file!!\n");
+        return FAIL;
+    }
 
     file_1->rows = custom_strcount(file_1->text, file_1->text_data.st_size);
 
     file_1->string_inf = (ptr_and_len*)calloc(file_1->rows, sizeof(char*)+sizeof(int));
+
+    if (file_1->string_inf == NULL)
+    {
+        printf("Sorry couldn't read the file!\n");
+        return FAIL;
+    }
+
     file_1->string_inf[0].pointer = &file_1->text[0];
 
     int index     = 0;
@@ -169,6 +175,7 @@ void read_text_from_file(all_inf_file* file_1)
             count_len = 0;
         }
     }
+    return SUCCESS;
 
 }
 
@@ -259,12 +266,9 @@ void write_text_to_file(all_inf_file* file_1)
 
     for (int y = 0; y < file_1->rows; y++)
     {
-        for (int i = 0; i < file_1->string_inf[y].length; i++)
-        {
-            fprintf(file_1->output_file, "%c", file_1->string_inf[y].pointer[i]);//СЃРґРµР»Р°С‚СЊ fputs
-        }
+        fprintf(file_1->output_file, "%.*s", file_1->string_inf[y].length, file_1->string_inf[y].pointer);
     }
-    fprintf(file_1->output_file, "\n");//fputc
+    putc('\n', file_1->output_file);
 }
 
 int custom_strcount(char* text, int size_of_file)
@@ -277,7 +281,9 @@ int custom_strcount(char* text, int size_of_file)
     for (int i = 0; i < size_of_file-1; i++)
     {
         if ((text[i] =='\r') && (text[i+1] == '\n'))
+        {
             count++;
+        }
     }
     return count;
 }
@@ -296,11 +302,13 @@ int custom_max(int var_1, int var_2)
     else return var_2;
 }
 
-STATUS_OF_OPERATION check_ptr(void* pointer) // cringe
+char* record_inf_from_file(const char* file_name, struct stat* text_data, FILE* input_file)
 {
-    if (pointer == NULL)
-    {
-        printf("Sorry couldn't read the file 3\n");
-        return FAIL;
-    }
+    stat(file_name, text_data);
+
+    char* text = (char*) calloc(text_data->st_size, sizeof(char));
+    
+    fread(text, text_data->st_size , sizeof(char), input_file);
+    printf("%p\n", text);
+    return text;
 }
