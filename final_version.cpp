@@ -49,14 +49,13 @@ struct all_inf_file
 STATUS_OF_OPERATION do_sort(const char* file, const char* output_file, COMPARATOR decider);
 STATUS_OF_OPERATION read_text_from_file(all_inf_file* FILE);
 void write_text_to_file(all_inf_file* FILE);
+char* record_inf_from_file(const char* file_name, struct stat* text_data, FILE* input_file);
+
+
 void my_sort(void* pointer_str, size_t size, size_t element_size, func_compare_t func_compare_str);
 COMPARE_STATUS func_compare_str_straight(const void* a, const void* b);
 COMPARE_STATUS func_compare_str_backwards(const void* a, const void* b);
-int custom_strcount(char* text, int size_of_file);
-int custom_min(int var_1, int var_2);
-int custom_max(int var_1, int var_2);
-STATUS_OF_OPERATION check_ptr(void* pointer);
-char* record_inf_from_file(const char* file_name, struct stat* text_data, FILE* input_file);
+
 
 int main(int argc, char* argv[])
 {
